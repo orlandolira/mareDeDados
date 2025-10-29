@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Qualidade do Ar e Temperatura</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            color: #1a2a6c;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            color: #555;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h2 {
+            color: #1a2a6c;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #b21f1f;
+            margin: 10px 0;
+        }
+        
+        .unit {
+            font-size: 1rem;
+            color: #777;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .good {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .moderate {
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        .bad {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .chart-title {
+            text-align: center;
+            color: #1a2a6c;
+            margin-bottom: 15px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 25px;
+            background-color: #1a2a6c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background-color: #253a8d;
+        }
+        
+        .data-table {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #1a2a6c;
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .charts {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-wind"></i> Monitor de Qualidade do Ar e Temperatura</h1>
+            <p class="description">Sistema de monitoramento em tempo real com ESP32 e Arduino Uno. Dados coletados por sensores de qualidade do ar e temperatura.</p>
+        </header>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h2><i class="fas fa-temperature-high"></i> Temperatura</h2>
+                <div class="value">24.5 <span class="unit">°C</span></div>
+                <div class="status good">Confortável</div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-tint"></i> Umidade</h2>
+                <div class="value">65 <span class="unit">%</span></div>
+                <div class="status moderate">Moderada</div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-smog"></i> Qualidade do Ar</h2>
+                <div class="value">87 <span class="unit">IAQ</span></div>
+                <div class="status good">Boa</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="btn-refresh"><i class="fas fa-sync-alt"></i> Atualizar Dados</button>
+            <button id="btn-download"><i class="fas fa-download"></i> Baixar Dados</button>
+            <button id="btn-settings"><i class="fas fa-cog"></i> Configurações</button>
+        </div>
+        
+        <div class="charts">
+            <div class="chart-container">
+                <h3 class="chart-title">Variação de Temperatura e Umidade</h3>
+                <canvas id="tempHumidityChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <h3 class="chart-title">Qualidade do Ar ao Longo do Tempo</h3>
+                <canvas id="airQualityChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="data-table">
+            <h3>Histórico de Leituras</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Temperatura (°C)</th>
+                        <th>Umidade (%)</th>
+                        <th>Qualidade do Ar (IAQ)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>25/05/2023 10:30</td>
+                        <td>24.5</td>
+                        <td>65</td>
+                        <td>87</td>
+                    </tr>
+                    <tr>
+                        <td>25/05/2023 10:15</td>
+                        <td>24.2</td>
+                        <td>64</td>
+                        <td>85</td>
+                    </tr>
+                    <tr>
+                        <td>25/05/2023 10:00</td>
+                        <td>23.9</td>
+                        <td>63</td>
+                        <td>82</td>
+                    </tr>
+                    <tr>
+                        <td>25/05/2023 09:45</td>
+                        <td>23.5</td>
+                        <td>62</td>
+                        <td>80</td>
+                    </tr>
+                    <tr>
+                        <td>25/05/2023 09:30</td>
+                        <td>23.2</td>
+                        <td>61</td>
+                        <td>78</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <footer>
+            <p>Projeto desenvolvido com ESP32 e Arduino Uno | Dados atualizados em tempo real</p>
+            <p>© 2023 - Sistema de Monitoramento Ambiental</p>
+        </footer>
+    </div>
+
+    <script>
+        // Simulação de dados em tempo real
+        function updateData() {
+            // Atualizar valores dos cards
+            const tempValue = (Math.random() * 5 + 22).toFixed(1);
+            const humidityValue = Math.floor(Math.random() * 20 + 50);
+            const airQualityValue = Math.floor(Math.random() * 30 + 70);
+            
+            document.querySelector('.card:nth-child(1) .value').innerHTML = `${tempValue} <span class="unit">°C</span>`;
+            document.querySelector('.card:nth-child(2) .value').innerHTML = `${humidityValue} <span class="unit">%</span>`;
+            document.querySelector('.card:nth-child(3) .value').innerHTML = `${airQualityValue} <span class="unit">IAQ</span>`;
+            
+            // Atualizar status
+            document.querySelector('.card:nth-child(1) .status').className = 'status ' + 
+                (tempValue > 25 ? 'bad' : tempValue > 23 ? 'moderate' : 'good');
+            document.querySelector('.card:nth-child(1) .status').textContent = 
+                tempValue > 25 ? 'Quente' : tempValue > 23 ? 'Confortável' : 'Frio';
+                
+            document.querySelector('.card:nth-child(2) .status').className = 'status ' + 
+                (humidityValue > 70 ? 'bad' : humidityValue > 60 ? 'moderate' : 'good');
+            document.querySelector('.card:nth-child(2) .status').textContent = 
+                humidityValue > 70 ? 'Alta' : humidityValue > 60 ? 'Moderada' : 'Baixa';
+                
+            document.querySelector('.card:nth-child(3) .status').className = 'status ' + 
+                (airQualityValue < 70 ? 'bad' : airQualityValue < 85 ? 'moderate' : 'good');
+            document.querySelector('.card:nth-child(3) .status').textContent = 
+                airQualityValue < 70 ? 'Ruim' : airQualityValue < 85 ? 'Moderada' : 'Boa';
+            
+            // Adicionar novo dado aos gráficos
+            addData(tempHumidityChart, labelIndex, [tempValue, humidityValue]);
+            addData(airQualityChart, labelIndex, airQualityValue);
+            labelIndex++;
+            
+            // Adicionar nova linha na tabela
+            const now = new Date();
+            const timeString = now.getHours() + ':' + now.getMinutes().toString().padStart(2, '0');
+            const tableBody = document.querySelector('.data-table tbody');
+            const newRow = `<tr>
+                <td>25/05/2023 ${timeString}</td>
+                <td>${tempValue}</td>
+                <td>${humidityValue}</td>
+                <td>${airQualityValue}</td>
+            </tr>`;
+            tableBody.innerHTML = newRow + tableBody.innerHTML;
+        }
+        
+        // Configuração dos gráficos
+        const ctx1 = document.getElementById('tempHumidityChart').getContext('2d');
+        const ctx2 = document.getElementById('airQualityChart').getContext('2d');
+        
+        let labelIndex = 5;
+        
+        const tempHumidityChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: ['09:30', '09:45', '10:00', '10:15', '10:30'],
+                datasets: [
+                    {
+                        label: 'Temperatura °C',
+                        data: [23.2, 23.5, 23.9, 24.2, 24.5],
+                        borderColor: '#b21f1f',
+                        backgroundColor: 'rgba(178, 31, 31, 0.1)',
+                        yAxisID: 'y',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Umidade %',
+                        data: [61, 62, 63, 64, 65],
+                        borderColor: '#1a2a6c',
+                        backgroundColor: 'rgba(26, 42, 108, 0.1)',
+                        yAxisID: 'y1',
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Temperatura (°C)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Umidade (%)'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                }
+            }
+        });
+        
+        const airQualityChart = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: ['09:30', '09:45', '10:00', '10:15', '10:30'],
+                datasets: [{
+                    label: 'Índice de Qualidade do Ar',
+                    data: [78, 80, 82, 85, 87],
+                    borderColor: '#fdbb2d',
+                    backgroundColor: 'rgba(253, 187, 45, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Qualidade do Ar (0-100)'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Função para adicionar dados aos gráficos
+        function addData(chart, label, data) {
+            if (chart.data.labels.length > 15) {
+                chart.data.labels.shift();
+                chart.data.datasets.forEach(dataset => {
+                    if (Array.isArray(data)) {
+                        dataset.data.shift();
+                    } else {
+                        if (dataset.data.length > 15) {
+                            dataset.data.shift();
+                        }
+                    }
+                });
+            }
+            
+            const now = new Date();
+            const timeString = now.getHours() + ':' + now.getMinutes().toString().padStart(2, '0');
+            chart.data.labels.push(timeString);
+            
+            if (Array.isArray(data)) {
+                for (let i = 0; i < data.length; i++) {
+                    chart.data.datasets[i].data.push(data[i]);
+                }
+            } else {
+                chart.data.datasets[0].data.push(data);
+            }
+            
+            chart.update();
+        }
+        
+        // Botões de controle
+        document.getElementById('btn-refresh').addEventListener('click', updateData);
+        
+        document.getElementById('btn-download').addEventListener('click', function() {
+            alert('Iniciando download dos dados...');
+            // Em uma implementação real, aqui seria feita a requisição para o backend
+        });
+        
+        document.getElementById('btn-settings').addEventListener('click', function() {
+            alert('Abrindo configurações...');
+            // Em uma implementação real, aqui seria aberto um modal de configurações
+        });
+        
+        // Atualizar dados a cada 30 segundos
+        setInterval(updateData, 30000);
+        
+        // Inicializar tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    </script>
+</body>
+</html>
