@@ -63,7 +63,7 @@ void loop() {
   
   // Ler sensores locais a cada 5 segundos
   static unsigned long lastSensorRead = 0;
-  if (currentMillis - lastSensorRead >= 5000) {
+  if (currentMillis - lastSensorRead >= 400000) {
     lastSensorRead = currentMillis;
     readDHTSensor();
     readAirQualitySensor();
